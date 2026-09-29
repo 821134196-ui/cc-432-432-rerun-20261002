@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>布卷疵点复检与退修系统</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">织</span>
+    <div>
+      <h1>布卷疵点复检与退修系统</h1>
+      <p>入检 · 初检 · 疵点定位 · 复检 · 退修版本 · 放行</p>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-view="ledger" class="tab active">布卷台账</button>
+    <button data-view="entry" class="tab">检验录入</button>
+    <button data-view="map" class="tab">疵点地图</button>
+    <button data-view="queue" class="tab">复检队列</button>
+    <button data-view="repair" class="tab">退修进度</button>
+    <button data-view="release" class="tab">放行记录</button>
+  </nav>
+</header>
+
+<main id="view"></main>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
