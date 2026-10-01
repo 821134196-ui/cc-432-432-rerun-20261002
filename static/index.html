@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>布卷疵点复检与退修系统</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">织</span>
+    <div>
+      <h1>布卷疵点复检与退修系统</h1>
+      <div class="sub">初检 · 复检隔离 · 退修版本 · 分级放行</div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span id="reminderBell" class="bell hidden" title="复检超时提醒">🔔<i id="reminderCount">0</i></span>
+    <label class="identity">当前检验人员
+      <input id="currentUser" list="userList" placeholder="如：赵复检">
+      <datalist id="userList">
+        <option value="王检"><option value="李检">
+        <option value="赵复检"><option value="周复检"><option value="钱修布">
+      </datalist>
+    </label>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-view="ledger">布卷台账</button>
+  <button class="tab" data-view="entry">检验录入</button>
+  <button class="tab" data-view="map">疵点地图</button>
+  <button class="tab" data-view="queue">复检队列</button>
+  <button class="tab" data-view="rework">退修进度</button>
+  <button class="tab" data-view="release">放行记录</button>
+</nav>
+
+<main>
+  <!-- 布卷台账 -->
+  <section id="view-ledger" class="view active">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>布卷台账</h2>
+        <button class="btn ghost" id="refreshLedger">刷新</button>
+      </div>
+      <div class="table-wrap">
+        <table class="grid" id="rollTable">
+          <thead><tr>
+            <th>布卷编号</th><th>长度(m)</th><th>幅宽(m)</th><th>颜色批次</th><th>来源机台</th>
+            <th>版本</th><th>状态</th><th>待复检疵点</th><th>操作</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel" id="rollDetailPanel" hidden>
+      <div class="panel-head"><h2 id="detailTitle">布卷详情</h2>
+        <button class="btn ghost" id="closeDetail">关闭</button></div>
+      <div id="detailBody"></div>
+    </div>
+  </section>
+
+  <!-- 检验录入 -->
+  <section id="view-entry" class="view">
+    <div class="entry-layout">
+      <div class="panel">
+        <div class="panel-head"><h2>检验录入</h2></div>
+        <div class="form-row">
+          <label>选择布卷
+            <select id="entryRoll"></select></label>
+          <button class="btn" id="loadEntryRoll">载入</button>
+        </div>
+        <!-- 固定显示当前米数与幅宽 -->
+        <div class="fixed-meter">
+          <div class="meter-item"><span class="meter-label">当前米数</span>
+            <strong id="currentMeter">0.0</strong><em>m</em></div>
+          <div class="meter-item"><span class="meter-label">布卷总长</span>
+            <strong id="totalMeter">0.0</strong><em>m</em></div>
+          <div class="meter-item"><span class="meter-label">幅宽</span>
+            <strong id="widthMeter">0.00</strong><em>m</em></div>
+          <div class="meter-item"><span class="meter-label">初检人</span>
+            <strong id="entryInspector">—</strong></div>
+        </div>
+
+        <h3>新增检验段</h3>
+        <div class="form-grid">
+          <label>起始米<input type="number" step="0.1" id="segStart"></label>
+          <label>结束米<input type="number" step="0.1" id="segEnd"></label>
+          <button class="btn" id="addSegment">添加检验段</button>
+        </div>
+        <ul class="seg-list" id="segList"></ul>
+
+        <h3>登记疵点（按米数定位）</h3>
+        <div class="form-grid">
+          <label>所属检验段<select id="defectSeg"></select></label>
+          <label>疵点类型<select id="defectType"></select></label>
+          <label>位置 (m)<input type="number" step="0.1" id="defectPos"></label>
+          <label>疵点长度 (m)<input type="number" step="0.01" id="defectLen" value="0.2"></label>
+          <label>等级
+            <select id="defectGrade">
+              <option value="A">A 严重</option><option value="B" selected>B 中等</option>
+              <option value="C">C 轻微</option></select></label>
+          <label>疵点照片<input type="file" id="defectPhoto" accept="image/*,.svg"></label>
+        </div>
+        <label class="full">备注 <input type="text" id="defectNote" placeholder="断经根数、污渍范围等"></label>
+        <div class="actions">
+          <button class="btn" id="addDefect">登记疵点</button>
+          <button class="btn rust" id="completeInitial">结束初检并生成复检任务</button>
+        </div>
+        <p class="hint" id="entryHint"></p>
+      </div>
+      <div class="panel">
+        <h3>本卷疵点</h3>
+        <div id="entryDefects"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 疵点地图 -->
+  <section id="view-map" class="view">
+    <div class="panel">
+      <div class="panel-head"><h2>疵点地图</h2>
+        <div class="legend" id="mapLegend"></div></div>
+      <p class="hint">横向长度条按米数展开，疵点按位置落点；点击标记查看照片与详情（照片需检验人员身份）。</p>
+      <div id="mapBody"></div>
+    </div>
+  </section>
+
+  <!-- 复检队列 -->
+  <section id="view-queue" class="view">
+    <div class="panel">
+      <div class="panel-head"><h2>复检队列</h2>
+        <button class="btn ghost" id="refreshQueue">刷新</button></div>
+      <p class="hint">复检人与初检人不能相同；同一布卷两条产线同时接收时仅一条成功。</p>
+      <div id="queueBody" class="cards"></div>
+    </div>
+  </section>
+
+  <!-- 退修进度 -->
+  <section id="view-rework" class="view">
+    <div class="panel">
+      <div class="panel-head"><h2>退修进度</h2>
+        <button class="btn ghost" id="refreshRework">刷新</button></div>
+      <div id="reworkBody" class="cards"></div>
+    </div>
+  </section>
+
+  <!-- 放行记录 -->
+  <section id="view-release" class="view">
+    <div class="panel">
+      <div class="panel-head"><h2>放行记录</h2>
+        <button class="btn ghost" id="refreshRelease">刷新</button></div>
+      <div class="rules" id="releaseRules"></div>
+      <div class="table-wrap">
+        <table class="grid" id="releaseTable">
+          <thead><tr><th>时间</th><th>布卷编号</th><th>版本</th><th>放行人</th>
+            <th>决定</th><th>放行依据</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 照片弹层 -->
+<div id="photoModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="photoTitle">疵点照片</h3><button id="photoClose">×</button></div>
+    <div id="photoBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

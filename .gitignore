@@ -13,3 +13,9 @@ build/
 轨迹/
 录屏/
 视频/
+
+# 运行时数据（启动时自动播种生成）
+textile_qc.db
+textile_qc.db-wal
+textile_qc.db-shm
+photos/
